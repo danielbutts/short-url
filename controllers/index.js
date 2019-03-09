@@ -1,8 +1,11 @@
 const Url = require('url-parse');
 const validator = require('validator');
 const crypto = require('crypto');
+const db = require('../services/dbService');
 
-// const db = require('../services/dbService');
+const IDEAL_HASH_LENGTH = 8;
+
+// controller functions for creating an retreiving shortened urls
 
 // esure that provided string is a valid URL
 const validateUrl = ({ url }) => {
@@ -10,6 +13,7 @@ const validateUrl = ({ url }) => {
     const valid = validator.isURL(url);
     return valid;
   } catch (error) {
+    console.error('validateUrl', error.message);
     throw error;
   }
 };
@@ -32,6 +36,7 @@ const sortQuerystring = ({ query }) => {
     sortedQuery = `?${params.join('&')}`;
     return sortedQuery;
   } catch (error) {
+    console.error('sortQuerystring', error.message);
     throw error;
   }
 };
@@ -51,27 +56,113 @@ const hashUrl = ({ url }) => {
 
     return hashedUrl;
   } catch (error) {
+    console.error('hashUrl', error.message);
     throw error;
   }
 };
 
-// controller functions for creating an retreiving shortened urls
-const generateHash = ({ url }) => {
+// get urls matching short hash
+const getUrlsByHashPrefix = async ({ hash }) => {
+  try {
+    const shortHash = hash.substring(0, IDEAL_HASH_LENGTH);
+    const urls = await db.getUrlsByHash({ hash: shortHash });
+    return urls;
+  } catch (error) {
+    console.error('getUrlsByHashPrefix', error.message);
+    throw error;
+  }
+};
+
+// write the URL to the database
+const persistUrl = async ({ url, hash, shortHash }) => {
+  try {
+    const result = await db.insertHashedUrl({ url, hash, shortHash });
+    return result;
+  } catch (error) {
+    console.error('persistUrl', error.message);
+    throw error;
+  }
+};
+
+// write the URL to the database
+const resetUrl = async ({ shortHash }) => {
+  try {
+    const result = await db.resetHashedUrl({ shortHash });
+    return result;
+  } catch (error) {
+    console.error('resetUrl', error.message);
+    throw error;
+  }
+};
+
+// returns boolean indicating if a provided string matches any members of an array
+const isUnique = ({ str, arr }) => !arr.every(el => (el !== str));
+
+// return the shortest substring of the hash that is unique
+const determineUniqueShortHash = ({ hash, matches }) => {
+  try {
+    let unique = false;
+    let shortHash = hash.substring(0, IDEAL_HASH_LENGTH);
+    const remainder = hash.substring(IDEAL_HASH_LENGTH).split('');
+    const matchHashes = matches.map(el => el.shortHash);
+    while (unique === false && remainder.length > 0) {
+      shortHash = `${shortHash}${remainder.shift()}`;
+      unique = isUnique({ str: shortHash, arr: matchHashes });
+    }
+    return shortHash;
+  } catch (error) {
+    console.error('determineUniqueShortHash', error.message);
+    throw error;
+  }
+};
+
+// create a hash from a provided url string
+const generateHash = async ({ url }) => {
   try {
     if (!validateUrl({ url })) throw new Error('Url is invalid');
     const parsedUrl = new Url(url);
     const { origin, pathname, query } = parsedUrl;
 
-    // console.log('url', origin, pathname, query);
     const sortedQuery = sortQuerystring({ query });
-    const hash = hashUrl({ url: `${origin}${pathname}${sortedQuery}` });
 
-    return hash;
+    const normalizedUrl = `${origin}${pathname}${sortedQuery}`;
+    const hash = hashUrl({ url: normalizedUrl });
+
+    const shortHash = hash.substring(0, IDEAL_HASH_LENGTH);
+    const matches = await getUrlsByHashPrefix({ hash: shortHash });
+    let action;
+    if (matches.length > 0) {
+      // at least one URL with a matching short hash exists in the database
+      if (isUnique({ str: normalizedUrl, arr: matches.map(el => el.url) })) {
+        // the entered URL is unique, but the short hash is not
+        const uniqueHash = determineUniqueShortHash({ hash, matches });
+
+        // save the new url with that shortest possbile unique hash
+        await persistUrl({ url, hash, shortHash: uniqueHash });
+        action = `New url created. Using ${uniqueHash} instead of ${shortHash}`;
+      } else {
+        // url is a duplicate of an existing url. Update valid and updated values
+        await resetUrl({ shortHash });
+        action = 'Existing url reset.';
+      }
+    } else {
+      // the provided url is unique
+      await persistUrl({ url, hash, shortHash });
+      action = 'New url created.';
+    }
+    return {
+      result: {
+        url,
+        hash,
+        shortHash,
+        action,
+      },
+    };
   } catch (error) {
+    console.error('generateHash', error.message);
     throw error;
   }
 };
-
 
 module.exports = {
   generateHash,

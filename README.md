@@ -25,7 +25,8 @@ PORT={application port - defaults to 3000}
 CREATE TABLE urls
 (
     url character varying(1000) NOT NULL,
-    hash character varying(10) NOT NULL,
+    shorthash character varying(32) NOT NULL,
+    hash character varying(32) NOT NULL,
     createddtm timestamp without time zone DEFAULT now(),
     active boolean NOT NULL DEFAULT true,
     CONSTRAINT urls_pkey PRIMARY KEY (hash)

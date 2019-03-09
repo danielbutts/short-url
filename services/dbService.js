@@ -16,9 +16,33 @@ const getUrlsByHash = async ({ hash }) => {
     const { rows } = result;
     return rows;
   } catch (err) {
+    console.error('getUrlsByHash', err.message);
     throw err;
   }
 };
+
+const insertHashedUrl = async ({ hash, shortHash, url }) => {
+  try {
+    // TODO - sanitize hash to prevent SQL injection
+    const result = await pool.query('INSERT INTO urls (url, hash, shorthash) VALUES ($1, $2, $3)', [url, hash, shortHash]);
+    return result;
+  } catch (err) {
+    console.error('insertHashedUrl', err.message);
+    throw err;
+  }
+};
+
+const resetHashedUrl = async ({ shortHash }) => {
+  try {
+    // TODO - sanitize hash to prevent SQL injection
+    const result = await pool.query('UPDATE urls set updatedttm = now(), active = true WHERE shorthash = $1', [shortHash]);
+    return result;
+  } catch (err) {
+    console.error('resetHashedUrl', err.message);
+    throw err;
+  }
+};
+
 
 const getUrls = async () => {
   try {
@@ -26,6 +50,7 @@ const getUrls = async () => {
     const { rows } = result;
     return rows;
   } catch (err) {
+    console.error('getUrls', err.message);
     throw err;
   }
 };
@@ -33,4 +58,6 @@ const getUrls = async () => {
 module.exports = {
   getUrlsByHash,
   getUrls,
+  insertHashedUrl,
+  resetHashedUrl,
 };

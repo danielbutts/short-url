@@ -25,7 +25,7 @@ router.post('/generate', async (req, res, next) => {
   try {
     const { url } = req.body;
     if (!url) throw new Error('The post body must contain a url');
-    const hash = urlController.generateHash({ url });
+    const hash = await urlController.generateHash({ url });
     res.json(hash);
   } catch (error) {
     next(error);
