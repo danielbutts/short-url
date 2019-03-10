@@ -10,6 +10,7 @@ import './App.css';
 class App extends Component {
   constructor() {
     super();
+
     this.state = {
       urls: {},
       isLoading: true,
@@ -41,10 +42,10 @@ class App extends Component {
           "status": "failure"
         });
       }
-      const { data } = await axios.post('http://localhost:5000/api/generate', { url: inputValue });
+      const { data } = await axios.post('/api/generate', { url: inputValue });
       this.displayNotification(data);
     } catch (error) {
-      console.error('RESPONSE ERROR', error.message);
+      console.error('handleSubmit', error.message);
     }
   }
 
@@ -63,7 +64,7 @@ class App extends Component {
       const { urls = {} } = data;
       this.setState({ urls, isLoading: false });
     } catch (error) {
-      console.error(error.message);
+      console.error('fetchUrls', error.message);
     }
   }
 
@@ -73,7 +74,7 @@ class App extends Component {
       await this.fetchUrls();
       this.setState({ currentPage: 'stats' })
     } catch (error) {
-      console.error(error.message);
+      console.error('clickStats', error.message);
     }
   }
 
@@ -102,7 +103,7 @@ class App extends Component {
       await this.setState({ alertActive: true, alertMessage: message, alertType, inputValue: clearInput ? '' : inputValue });
       setTimeout(() => this.setState({ alertActive: false, alertMessage: '', alertType: '' }), 5000);
     } catch (error) {
-      console.error(error.message);
+      console.error('displayNotification', error.message);
     }
   }
 

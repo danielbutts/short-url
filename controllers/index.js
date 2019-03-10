@@ -91,16 +91,15 @@ const getUrlsByHashPrefix = async ({ hash }) => {
 };
 
 // get url exactly matching a hash
-const getUrlByHash = async ({ hash }) => {
+const getUrlByHash = async ({ shortHash }) => {
   try {
-    const url = await db.getUrlByHash({ hash });
+    const url = await db.getUrlByHash({ shortHash });
     return url;
   } catch (error) {
     console.error('getUrlsByHashPrefix', error.message);
     throw error;
   }
 };
-
 
 // write the URL to the database
 const persistUrl = async ({ url, hash, shortHash }) => {
@@ -113,7 +112,7 @@ const persistUrl = async ({ url, hash, shortHash }) => {
   }
 };
 
-// write the URL to the database
+// Reset the update date time for the URL in the database to now
 const resetUrl = async ({ shortHash }) => {
   try {
     const result = await db.resetHashedUrl({ shortHash });
@@ -210,4 +209,5 @@ module.exports = {
   generateHash,
   getUrls,
   getUrlByHash,
+  resetUrl
 };

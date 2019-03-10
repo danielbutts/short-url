@@ -21,10 +21,10 @@ const getUrlsLikeHash = async ({ hash }) => {
   }
 };
 
-const getUrlByHash = async ({ hash }) => {
+const getUrlByHash = async ({ shortHash }) => {
   try {
     // TODO - sanitize hash to prevent SQL injection
-    const result = await pool.query('SELECT * FROM urls WHERE shorthash = $1', [hash]);
+    const result = await pool.query('SELECT * FROM urls WHERE shorthash = $1', [shortHash]);
     const { rows: [row] } = result;
     return row;
   } catch (err) {
@@ -47,14 +47,13 @@ const insertHashedUrl = async ({ hash, shortHash, url }) => {
 const resetHashedUrl = async ({ shortHash }) => {
   try {
     // TODO - sanitize hash to prevent SQL injection
-    const result = await pool.query('UPDATE urls set updatedttm = now(), active = true WHERE shorthash = $1', [shortHash]);
+    const result = await pool.query('UPDATE urls set updatedttm = now() WHERE shorthash = $1', [shortHash]);
     return result;
   } catch (err) {
     console.error('resetHashedUrl', err.message);
     throw err;
   }
 };
-
 
 const getUrls = async () => {
   try {

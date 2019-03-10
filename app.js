@@ -2,6 +2,7 @@ const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const moment = require('moment');
 
 const routes = require('./routes');
 const urlController = require('./controllers');
@@ -15,22 +16,30 @@ app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.use('/api', routes);
 
+// shortened URLs expire after 14 days without use
+const URL_DURATION = 14;
+
 /* GET urls by hash. */
-app.get('/:hash', async (req, res, next) => {
+app.get('/:shortHash', async (req, res, next) => {
   try {
-    const { hash } = req.params;
-    const result = await urlController.getUrlByHash({ hash });
+    const { shortHash } = req.params;
+    const result = await urlController.getUrlByHash({ shortHash });
+    console.log('TIMMY', result, shortHash);
     if (result) {
+      // determine if URL is still active
       const now = moment();
       const lastUpdated = moment(result.updatedttm);
       const daysSinceUpdate = moment.duration(now.diff(lastUpdated)).asDays();
       if (daysSinceUpdate > URL_DURATION) {
         return next(new Error('The short url you used has expired'));
       }
+      // Asynchronosuly update updatedttm for url to avoid expiry
+      urlController.resetUrl({ shortHash });
       return res.redirect(result.url);
     }
     return next(new Error('The short url you used is invalid'));
   } catch (error) {
+    console.error('get - /:shortHash', error.message);
     return next(error);
   }
 });
