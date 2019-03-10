@@ -148,7 +148,14 @@ const determineUniqueShortHash = ({ hash, matches }) => {
 // create a hash from a provided url string
 const generateHash = async ({ url }) => {
   try {
-    if (!validateUrl({ url })) throw new Error('Url is invalid');
+    if (!validateUrl({ url })) {
+      return { result: {
+          url,
+          message: 'Url is invalid',
+          status: 'failure'
+        }
+      }
+    }
     const parsedUrl = new Url(url);
     const { origin, pathname, query } = parsedUrl;
 
@@ -159,7 +166,8 @@ const generateHash = async ({ url }) => {
 
     const shortHash = hash.substring(0, IDEAL_HASH_LENGTH);
     const matches = await getUrlsByHashPrefix({ hash: shortHash });
-    let action;
+    let status;
+    let message;
     if (matches.length > 0) {
       // at least one URL with a matching short hash exists in the database
       if (isUnique({ str: normalizedUrl, arr: matches.map(el => el.url) })) {
@@ -168,23 +176,28 @@ const generateHash = async ({ url }) => {
 
         // save the new url with that shortest possbile unique hash
         await persistUrl({ url, hash, shortHash: uniqueHash });
-        action = `New url created. Using ${uniqueHash} instead of ${shortHash}`;
+        console.warn(`Short hash conflict. New url created using ${uniqueHash} instead of ${shortHash}`);
+        message = 'New url created.';
+        status = 'create';
       } else {
         // url is a duplicate of an existing url. Update valid and updated values
         await resetUrl({ shortHash });
-        action = 'Existing url reset.';
+        message = 'Existing url reset.';
+        status = 'update';
       }
     } else {
       // the provided url is unique
       await persistUrl({ url, hash, shortHash });
-      action = 'New url created.';
+      message = 'New url created.';
+      status = 'create';
     }
     return {
       result: {
         url,
         hash,
         shortHash,
-        action,
+        message,
+        status,
       },
     };
   } catch (error) {

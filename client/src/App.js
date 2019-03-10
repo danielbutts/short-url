@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/css/bootstrap-theme.min.css';
 import React, { Component } from 'react';
-import { Table, Form, Button, ButtonToolbar, Container, Row, Col } from 'react-bootstrap';
+import { Alert, Table, Form, Button, ButtonToolbar, Container, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import moment from 'moment';
 
@@ -14,12 +14,16 @@ class App extends Component {
       urls: {},
       isLoading: true,
       currentPage: 'home',
-      inputValue: ''
+      inputValue: '',
+      alertActive: false,
+      alertMessage: '',
+      alertType: '',
     }
     this.clickHome = this.clickHome.bind(this);
     this.clickStats = this.clickStats.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.displayNotification = this.displayNotification.bind(this);
   }
 
   handleChange(event) {
@@ -27,10 +31,21 @@ class App extends Component {
   }
 
   handleSubmit = async (event) => {
-    event.preventDefault();
-    const { inputValue } = this.state;
-    const response = await axios.post('http://localhost:5000/api/generate', { url: inputValue });
-    console.log('POST RESPONSE', response);
+    try {
+      event.preventDefault();
+      const { inputValue } = this.state;
+      if (!inputValue || inputValue == '') {
+        // display error notification and prevent submittal if form input blank
+        this.displayNotification({
+          "message": "URL cannot be blank.",
+          "status": "failure"
+        });
+      }
+      const { data } = await axios.post('http://localhost:5000/api/generate', { url: inputValue });
+      this.displayNotification(data);
+    } catch (error) {
+      console.error('RESPONSE ERROR', error.message);
+    }
   }
 
   componentDidMount() {
@@ -47,18 +62,48 @@ class App extends Component {
       const { data } = await axios.get('/api/urls');
       const { urls = {} } = data;
       this.setState({ urls, isLoading: false });
-    } catch {
-      console.error('Failed to load URLs');
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  clickStats = async () => {
+    try {
+      await this.setState({ isLoading: true })
+      await this.fetchUrls();
+      this.setState({ currentPage: 'stats' })
+    } catch (error) {
+      console.error(error.message);
     }
   }
 
   clickHome() {
-    this.setState({ isLoading: true, currentPage: 'home' })
-    this.fetchUrls();
+    this.setState({ currentPage: 'home' })
   }
 
-  clickStats() {
-    this.setState({ currentPage: 'stats' })
+  displayNotification = async (result) => {
+    try {
+      const { inputValue } = this.state;
+      const { status, message } = result;
+      let alertType;
+      let clearInput = false;
+      switch (status) {
+        case 'create':
+          alertType = 'success';
+          clearInput = true;
+          break;
+        case 'update':
+          alertType = 'warning';
+          clearInput = true;
+          break;
+        default:
+          alertType = 'danger';
+      }
+      await this.setState({ alertActive: true, alertMessage: message, alertType, inputValue: clearInput ? '' : inputValue });
+      setTimeout(() => this.setState({ alertActive: false, alertMessage: '', alertType: '' }), 5000);
+    } catch (error) {
+      console.error(error.message);
+    }
   }
 
   renderNav = () => {
@@ -70,6 +115,15 @@ class App extends Component {
         <Button variant={homeButtonStyle} onClick={this.clickHome}>Home</Button>&nbsp;
         <Button variant={statsButtonStyle} onClick={this.clickStats}>Stats</Button>
       </ButtonToolbar>
+    );
+  }
+
+  renderNotification = () => {
+    const { alertActive, alertMessage, alertType  } = this.state;
+    return (alertActive &&
+      <Alert variant={alertType}>
+        {alertMessage}
+      </Alert>
     );
   }
 
@@ -99,6 +153,10 @@ class App extends Component {
                 </Button>
               </Form>
             </Col>
+          </Row>
+          <Row>&nbsp;</Row>
+          <Row>
+            {this.renderNotification()}
           </Row>
         </Container>
       </div>
