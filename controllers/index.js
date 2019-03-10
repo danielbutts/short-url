@@ -71,8 +71,7 @@ const hashUrl = ({ url }) => {
 // get all urls
 const getUrls = async () => {
   try {
-    const urls = await db.getUrls();
-    return urls;
+    return urls = await db.getUrls();
   } catch (error) {
     console.error('getUrls', error.message);
     throw error;

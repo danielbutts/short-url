@@ -4,6 +4,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 
 const routes = require('./routes');
+const urlController = require('./controllers');
 
 const app = express();
 
@@ -13,6 +14,26 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.use('/api', routes);
+
+/* GET urls by hash. */
+app.get('/:hash', async (req, res, next) => {
+  try {
+    const { hash } = req.params;
+    const result = await urlController.getUrlByHash({ hash });
+    if (result) {
+      const now = moment();
+      const lastUpdated = moment(result.updatedttm);
+      const daysSinceUpdate = moment.duration(now.diff(lastUpdated)).asDays();
+      if (daysSinceUpdate > URL_DURATION) {
+        return next(new Error('The short url you used has expired'));
+      }
+      return res.redirect(result.url);
+    }
+    return next(new Error('The short url you used is invalid'));
+  } catch (error) {
+    return next(error);
+  }
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '/client/build/index.html'));
