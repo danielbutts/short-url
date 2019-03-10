@@ -41,6 +41,13 @@ const sortQuerystring = ({ query }) => {
   }
 };
 
+// Replace slashes in the base64 encoded hash to avoid url matching issues in express
+const replaceSlashes = ({ str }) => {
+  const regex = new RegExp(/\//g);
+  const replaced = str.replace(regex, '.');
+  return replaced;
+};
+
 // MD5 Hash the URL to generate a unique hash representation of consistent length
 const hashUrl = ({ url }) => {
   try {
@@ -48,7 +55,7 @@ const hashUrl = ({ url }) => {
 
     // TODO - consider removing '/' and '+' characters from hashed URL to improve reability
     let hashedUrl = hash.update(url).digest('base64');
-
+    hashedUrl = replaceSlashes({ str: hashedUrl });
     // remove trailing padding from hashed string
     if (hashedUrl.indexOf('=') !== -1) {
       hashedUrl = hashedUrl.substring(0, hashedUrl.indexOf('='));
@@ -61,17 +68,40 @@ const hashUrl = ({ url }) => {
   }
 };
 
+// get all urls
+const getUrls = async () => {
+  try {
+    const urls = await db.getUrls();
+    return urls;
+  } catch (error) {
+    console.error('getUrls', error.message);
+    throw error;
+  }
+};
+
 // get urls matching short hash
 const getUrlsByHashPrefix = async ({ hash }) => {
   try {
     const shortHash = hash.substring(0, IDEAL_HASH_LENGTH);
-    const urls = await db.getUrlsByHash({ hash: shortHash });
+    const urls = await db.getUrlsLikeHash({ hash: shortHash });
     return urls;
   } catch (error) {
     console.error('getUrlsByHashPrefix', error.message);
     throw error;
   }
 };
+
+// get url exactly matching a hash
+const getUrlByHash = async ({ hash }) => {
+  try {
+    const url = await db.getUrlByHash({ hash });
+    return url;
+  } catch (error) {
+    console.error('getUrlsByHashPrefix', error.message);
+    throw error;
+  }
+};
+
 
 // write the URL to the database
 const persistUrl = async ({ url, hash, shortHash }) => {
@@ -166,4 +196,6 @@ const generateHash = async ({ url }) => {
 
 module.exports = {
   generateHash,
+  getUrls,
+  getUrlByHash,
 };

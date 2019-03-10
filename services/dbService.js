@@ -9,14 +9,26 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-const getUrlsByHash = async ({ hash }) => {
+const getUrlsLikeHash = async ({ hash }) => {
   try {
     // TODO - sanitize hash to prevent SQL injection
     const result = await pool.query('SELECT * FROM urls WHERE hash like $1', [`${hash}%`]);
     const { rows } = result;
     return rows;
   } catch (err) {
-    console.error('getUrlsByHash', err.message);
+    console.error('getUrlsLikeHash', err.message);
+    throw err;
+  }
+};
+
+const getUrlByHash = async ({ hash }) => {
+  try {
+    // TODO - sanitize hash to prevent SQL injection
+    const result = await pool.query('SELECT * FROM urls WHERE shorthash = $1', [hash]);
+    const { rows: [row] } = result;
+    return row;
+  } catch (err) {
+    console.error('getUrlByHash', err.message);
     throw err;
   }
 };
@@ -46,6 +58,7 @@ const resetHashedUrl = async ({ shortHash }) => {
 
 const getUrls = async () => {
   try {
+    // TODO - sanitize hash to prevent SQL injection
     const result = await pool.query('SELECT * FROM urls');
     const { rows } = result;
     return rows;
@@ -56,7 +69,8 @@ const getUrls = async () => {
 };
 
 module.exports = {
-  getUrlsByHash,
+  getUrlsLikeHash,
+  getUrlByHash,
   getUrls,
   insertHashedUrl,
   resetHashedUrl,

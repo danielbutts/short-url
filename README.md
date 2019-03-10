@@ -28,7 +28,6 @@ CREATE TABLE urls
     shorthash character varying(32) NOT NULL,
     hash character varying(32) NOT NULL,
     createddtm timestamp without time zone DEFAULT now(),
-    active boolean NOT NULL DEFAULT true,
     CONSTRAINT urls_pkey PRIMARY KEY (hash)
 )
 ```
