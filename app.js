@@ -24,7 +24,6 @@ app.get('/:shortHash', async (req, res, next) => {
   try {
     const { shortHash } = req.params;
     const result = await urlController.getUrlByHash({ shortHash });
-    console.log('TIMMY', result, shortHash);
     if (result) {
       // determine if URL is still active
       const now = moment();
