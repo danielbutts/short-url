@@ -11,7 +11,7 @@ Generating the short URL takes six steps:
 1) Order query parameters alphabetically to ensure only urls with different parameters are treated as unique
 2) Hash the full url (including ordered query parameters) with MD5. Although not the fastest, MD5 produces a reletaviely short (32 character) hash and negligable collision probablity. Security flaws of MD5 are not important for a not cryptographic application like URL shortening.
 3) Base-64 encode the URL to shorten the hash without data loss and translate into a set of user friendly characters. The exception being '+' and '/' (any padding characters '=' are stripped). '/' characters are replaced with '.' to avoid issues of URL-part matching by express when the short url is used. Ideally, the hash would be base-62 encoded to avoid the use of non-alphanumeric characters in the short URLs entirely (future work).
-4) Shorten the hash to a ideal length for usability using a substring (in this case 8 character).
+4) Shorten the hash to a ideal length for usability using a substring (in this case 8 characters).
 5) Validate uniqueness of the short hash in the pesistence layer and increase if needed to ensure all short urls are unique and as short as possible. This allows most short urls to be user friendly, but ensures the system could scale well beyond expected usage.
 6) Persist the original URL, the full hash, the short hash, and the current time (as created and updated date) in the persistence layer
 
