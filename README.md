@@ -5,7 +5,22 @@
 ## Description
 This is a simple web application to create shortened URLs for easier use. The application persists original urls, their hashes, and associated metadata in a postgres database.
 
-### How to install:
+## Design Considerations
+#### React
+* Although this application required very little UI, React was chosen as a front-end framework over other, lighter weight, frameworks or template engines like handlebars or EJS because it can be easily extended/customized in the future as an application inevitably grows over time.
+* In a larger application or in a production the React application would be refactored into a more organized file strucutre and include custom components to provide a better user experience and improve managability.
+
+#### React-Bootsrap
+* React-Bootsrap was chosen for expedience to provide styled components without the overhead of building the manaully and in the absence of a custom component library.
+
+#### Express Generator
+* The Express Generator was used to quickly create the framework for a Node/Express api and serve static content for the React front end.
+
+#### Create React App
+* Similarly, Create React App was used to generate the template application without the overhead of manually building the app and configuring React/Babel/Webpack/etc.
+
+
+## How to install:
 
 * Fork and clone the git repository
 * Run `npm install` to install dependencies.
