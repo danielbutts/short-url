@@ -57,6 +57,6 @@ CREATE TABLE urls (
 
 ### Future work:
 * Improved UI including refactor of React App.js into more manageable component/file structure
-* Addition statistics (e.g. number of times a link has been used)
+* Additional statistics (e.g. number of times a link has been used)
 * Use Base-62 encoding instead of Base-64 to avoid less user friendly characters (e.g. + and /)
 * More user friendly messaging on url creation (e.g. link in alert message)
