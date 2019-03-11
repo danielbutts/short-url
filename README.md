@@ -6,6 +6,21 @@
 This is a simple web application to create shortened URLs for easier use. The application persists original urls, their hashes, and associated metadata in a postgres database.
 
 ## Design Considerations
+### URL Shortening Strategy
+Generating the short URL takes six steps:
+1) Order query parameters alphabetically to ensure only urls with different parameters are treated as unique
+2) Hash the full url (including ordered query parameters) with MD5. Although not the fastest, MD5 produces a reletaviely short (32 character) hash and negligable collision probablity. Security flaws of MD5 are not important for a not cryptographic application like URL shortening.
+3) Base-64 encode the URL to shorten the hash without data loss and translate into a set of user friendly characters. The exception being '+' and '/' (any padding characters '=' are stripped). '/' characters are replaced with '.' to avoid issues of URL-part matching by express when the short url is used. Ideally, the hash would be base-62 encoded to avoid the use of non-alphanumeric characters in the short URLs entirely (future work).
+4) Shorten the hash to a ideal length for usability using a substring (in this case 8 character).
+5) Validate uniqueness of the short hash in the pesistence layer and increase if needed to ensure all short urls are unique and as short as possible. This allows most short urls to be user friendly, but ensures the system could scale well beyond expected usage.
+6) Persist the original URL, the full hash, the short hash, and the current time (as created and updated date) in the persistence layer
+
+### URL Expiry
+* If a short URL is not used within the last 14 days, it is considered expired and a user will not be redirected to the original URL.
+* Whenever a shortened URL is used (if it is still valid), the updated date is reset in the database.
+* If the same URL is re-shortened, the update date is reset to now even if the URL was previously considered expired, but the create date is not adjusted. This preserves the history of the urls original creation (albeit in a limited way).
+
+## Technologies
 #### React
 * Although this application required very little UI, React was chosen as a front-end framework over other, lighter weight, frameworks or template engines like handlebars or EJS because it can be easily extended/customized in the future as an application inevitably grows over time.
 * In a larger application or in a production the React application would be refactored into a more organized file strucutre and include custom components to provide a better user experience and improve managability.
